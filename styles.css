@@ -318,6 +318,8 @@ h2 {
   display: block;
   margin-top: 14px;
   font-size: 2rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .panel {

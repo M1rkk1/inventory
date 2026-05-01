@@ -1,77 +1,16 @@
-const STORAGE_KEY = "companyInventoryApp.v1";
+const STORAGE_KEY = "gammaInventory.v1";
 
 function createId() {
   if (window.crypto?.randomUUID) return crypto.randomUUID();
   return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-const demoItems = [
-  {
-    id: createId(),
-    name: "Dell Latitude Laptops",
-    category: "IT Equipment",
-    quantity: 14,
-    threshold: 5,
-    unitValue: 780,
-    location: "Head Office",
-    custodian: "IT Department",
-    condition: "Good",
-    status: "In Stock",
-    purchaseDate: "2025-09-18",
-    notes: "Tagged and ready for assignment.",
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: createId(),
-    name: "Office Chairs",
-    category: "Furniture",
-    quantity: 3,
-    threshold: 6,
-    unitValue: 95,
-    location: "Store Room",
-    custodian: "Admin",
-    condition: "Fair",
-    status: "In Stock",
-    purchaseDate: "2024-11-06",
-    notes: "Order more before onboarding.",
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: createId(),
-    name: "HP LaserJet Printer",
-    category: "Office Equipment",
-    quantity: 1,
-    threshold: 1,
-    unitValue: 420,
-    location: "Finance Office",
-    custodian: "Finance",
-    condition: "Needs Repair",
-    status: "Maintenance",
-    purchaseDate: "2023-05-21",
-    notes: "Paper feed issue reported.",
-    updatedAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-  {
-    id: createId(),
-    name: "Safety Helmets",
-    category: "Safety Gear",
-    quantity: 0,
-    threshold: 10,
-    unitValue: 18,
-    location: "Site Store",
-    custodian: "Operations",
-    condition: "Good",
-    status: "Out of Stock",
-    purchaseDate: "2025-01-09",
-    notes: "Restock required for field work.",
-    updatedAt: new Date(Date.now() - 259200000).toISOString(),
-  },
-];
+const initialItems = [];
 
 const state = {
   items: [],
   settings: {
-    companyName: "Company Inventory",
+    companyName: "Gamma Inventory",
     currency: "$",
   },
   filters: {
@@ -116,17 +55,17 @@ const els = {
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) {
-    state.items = demoItems;
+    state.items = initialItems;
     saveState();
     return;
   }
 
   try {
     const parsed = JSON.parse(saved);
-    state.items = Array.isArray(parsed.items) ? parsed.items : demoItems;
+    state.items = Array.isArray(parsed.items) ? parsed.items : initialItems;
     state.settings = { ...state.settings, ...(parsed.settings || {}) };
   } catch {
-    state.items = demoItems;
+    state.items = initialItems;
   }
 }
 
@@ -262,6 +201,14 @@ function renderTable() {
 }
 
 function renderStats() {
+  if (!state.items.length) {
+    els.totalItems.textContent = "Ready";
+    els.totalQuantity.textContent = "Add stock";
+    els.lowStockCount.textContent = "Clear";
+    els.stockValue.textContent = "No value";
+    return;
+  }
+
   const totalQuantity = state.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const totalValue = state.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unitValue || 0), 0);
   const lowStock = state.items.filter((item) => ["Low Stock", "Out of Stock"].includes(derivedStatus(item))).length;
@@ -512,7 +459,7 @@ function bindEvents() {
 
   els.companyForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    state.settings.companyName = els.companyName.value.trim() || "Company Inventory";
+    state.settings.companyName = els.companyName.value.trim() || "Gamma Inventory";
     state.settings.currency = els.currencyInput.value.trim() || "$";
     saveState();
     renderAll();
@@ -526,8 +473,8 @@ function bindEvents() {
   });
 
   els.resetBtn.addEventListener("click", () => {
-    if (!confirm("Replace current records with the original demo data?")) return;
-    state.items = demoItems.map((item) => ({ ...item, id: createId(), updatedAt: new Date().toISOString() }));
+    if (!confirm("Clear all inventory records from this browser? Export a backup first if you need to keep them.")) return;
+    state.items = [];
     saveState();
     renderAll();
   });
