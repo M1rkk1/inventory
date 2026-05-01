@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Company Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">CI</div>
+          <div>
+            <strong>Company Inventory</strong>
+            <span>Assets and stock register</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Primary">
+          <button class="nav-item active" type="button" data-view="dashboard">
+            <span class="icon" data-icon="layout-dashboard"></span>
+            Dashboard
+          </button>
+          <button class="nav-item" type="button" data-view="items">
+            <span class="icon" data-icon="boxes"></span>
+            Items
+          </button>
+          <button class="nav-item" type="button" data-view="reports">
+            <span class="icon" data-icon="chart-column"></span>
+            Reports
+          </button>
+          <button class="nav-item" type="button" data-view="settings">
+            <span class="icon" data-icon="settings"></span>
+            Settings
+          </button>
+        </nav>
+
+        <div class="sidebar-panel">
+          <span class="label">Storage</span>
+          <strong>Saved in this browser</strong>
+          <p>Use export to back up or move inventory records.</p>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Inventory Control</p>
+            <h1 id="pageTitle">Dashboard</h1>
+          </div>
+          <div class="topbar-actions">
+            <label class="search">
+              <span class="icon" data-icon="search"></span>
+              <input id="globalSearch" type="search" placeholder="Search items, tags, custodians..." />
+            </label>
+            <button class="button secondary" id="exportBtn" type="button">
+              <span class="icon" data-icon="download"></span>
+              Export
+            </button>
+            <button class="button primary" id="addItemBtn" type="button">
+              <span class="icon" data-icon="plus"></span>
+              Add Item
+            </button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboardView" aria-labelledby="dashboardTitle">
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-icon" data-icon="package-check"></span>
+              <p>Total Items</p>
+              <strong id="totalItems">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon" data-icon="warehouse"></span>
+              <p>Total Quantity</p>
+              <strong id="totalQuantity">0</strong>
+            </article>
+            <article class="stat-card warning">
+              <span class="stat-icon" data-icon="triangle-alert"></span>
+              <p>Low Stock</p>
+              <strong id="lowStockCount">0</strong>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon" data-icon="banknote"></span>
+              <p>Stock Value</p>
+              <strong id="stockValue">$0</strong>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2 id="dashboardTitle">Needs Attention</h2>
+                  <p>Low stock and maintenance priorities</p>
+                </div>
+                <button class="button ghost" type="button" data-view-shortcut="items">View all</button>
+              </div>
+              <div class="attention-list" id="attentionList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Recent Activity</h2>
+                  <p>Latest additions and updates</p>
+                </div>
+              </div>
+              <div class="activity-list" id="activityList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="itemsView" aria-labelledby="itemsTitle">
+          <div class="toolbar">
+            <div>
+              <h2 id="itemsTitle">Inventory Items</h2>
+              <p>Add, filter, update, and track company property.</p>
+            </div>
+            <div class="filters">
+              <select id="categoryFilter" aria-label="Filter by category">
+                <option value="all">All categories</option>
+              </select>
+              <select id="statusFilter" aria-label="Filter by status">
+                <option value="all">All status</option>
+                <option value="In Stock">In Stock</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Qty</th>
+                  <th>Location</th>
+                  <th>Custodian</th>
+                  <th>Status</th>
+                  <th>Value</th>
+                  <th aria-label="Actions"></th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" id="reportsView" aria-labelledby="reportsTitle">
+          <div class="toolbar">
+            <div>
+              <h2 id="reportsTitle">Reports</h2>
+              <p>Quick summaries for operations and audits.</p>
+            </div>
+          </div>
+          <div class="report-grid">
+            <section class="panel">
+              <h2>Category Breakdown</h2>
+              <div class="bar-list" id="categoryReport"></div>
+            </section>
+            <section class="panel">
+              <h2>Location Breakdown</h2>
+              <div class="bar-list" id="locationReport"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settingsView" aria-labelledby="settingsTitle">
+          <div class="settings-layout">
+            <section class="panel">
+              <h2 id="settingsTitle">Company Details</h2>
+              <form id="companyForm" class="form-grid compact">
+                <label>
+                  Company name
+                  <input id="companyName" type="text" placeholder="Client company name" />
+                </label>
+                <label>
+                  Currency
+                  <input id="currencyInput" type="text" maxlength="4" placeholder="$" />
+                </label>
+                <button class="button primary" type="submit">
+                  <span class="icon" data-icon="save"></span>
+                  Save Settings
+                </button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <h2>Backup and Restore</h2>
+              <div class="backup-actions">
+                <button class="button secondary" id="exportSettingsBtn" type="button">
+                  <span class="icon" data-icon="download"></span>
+                  Export Data
+                </button>
+                <label class="button secondary file-button">
+                  <span class="icon" data-icon="upload"></span>
+                  Import Data
+                  <input id="importFile" type="file" accept="application/json" />
+                </label>
+                <button class="button danger" id="resetBtn" type="button">
+                  <span class="icon" data-icon="trash-2"></span>
+                  Clear Demo Data
+                </button>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="itemDialog">
+      <form method="dialog" id="itemForm" class="item-form">
+        <div class="modal-heading">
+          <div>
+            <p class="eyebrow">Inventory Record</p>
+            <h2 id="modalTitle">Add Item</h2>
+          </div>
+          <button class="icon-button" value="cancel" type="button" id="closeModalBtn" aria-label="Close">
+            <span class="icon" data-icon="x"></span>
+          </button>
+        </div>
+
+        <input type="hidden" id="itemId" />
+        <div class="form-grid">
+          <label>
+            Item name
+            <input id="itemName" type="text" required placeholder="Laptop, printer, chairs..." />
+          </label>
+          <label>
+            Category
+            <input id="itemCategory" type="text" required placeholder="IT Equipment" list="categorySuggestions" />
+            <datalist id="categorySuggestions"></datalist>
+          </label>
+          <label>
+            Quantity
+            <input id="itemQuantity" type="number" min="0" step="1" required />
+          </label>
+          <label>
+            Low-stock alert
+            <input id="itemThreshold" type="number" min="0" step="1" required />
+          </label>
+          <label>
+            Unit value
+            <input id="itemValue" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            Purchase date
+            <input id="purchaseDate" type="date" />
+          </label>
+          <label>
+            Location
+            <input id="itemLocation" type="text" placeholder="Main store, office 2..." />
+          </label>
+          <label>
+            Custodian
+            <input id="itemCustodian" type="text" placeholder="Person or department" />
+          </label>
+          <label>
+            Condition
+            <select id="itemCondition">
+              <option>Good</option>
+              <option>Fair</option>
+              <option>Needs Repair</option>
+              <option>Retired</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select id="itemStatus">
+              <option>In Stock</option>
+              <option>Assigned</option>
+              <option>Maintenance</option>
+              <option>Out of Stock</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          Notes
+          <textarea id="itemNotes" rows="3" placeholder="Serial numbers, supplier, warranty, remarks..."></textarea>
+        </label>
+
+        <div class="modal-actions">
+          <button class="button secondary" value="cancel" type="button" id="cancelBtn">Cancel</button>
+          <button class="button primary" value="default" type="submit">
+            <span class="icon" data-icon="check"></span>
+            Save Item
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="emptyStateTemplate">
+      <tr>
+        <td colspan="8">
+          <div class="empty-state">
+            <span class="icon" data-icon="package-open"></span>
+            <strong>No items found</strong>
+            <p>Add an item or adjust your filters.</p>
+          </div>
+        </td>
+      </tr>
+    </template>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
