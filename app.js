@@ -13,7 +13,7 @@ const state = {
   items: [],
   settings: {
     companyName: "Gamma Inventory",
-    currency: "$",
+    currency: "KES",
   },
   filters: {
     search: "",
@@ -204,6 +204,7 @@ function loadState() {
     const parsed = JSON.parse(saved);
     state.items = Array.isArray(parsed.items) ? parsed.items : initialItems;
     state.settings = { ...state.settings, ...(parsed.settings || {}) };
+    if (state.settings.currency === "$") state.settings.currency = "KES";
   } catch {
     state.items = initialItems;
   }
@@ -220,7 +221,7 @@ function saveState() {
 }
 
 function formatMoney(value) {
-  return `${state.settings.currency || "$"}${Number(value || 0).toLocaleString(undefined, {
+  return `${state.settings.currency || "KES"} ${Number(value || 0).toLocaleString(undefined, {
     maximumFractionDigits: 2,
   })}`;
 }
@@ -789,7 +790,7 @@ function bindEvents() {
   els.companyForm.addEventListener("submit", (event) => {
     event.preventDefault();
     state.settings.companyName = els.companyName.value.trim() || "Gamma Inventory";
-    state.settings.currency = els.currencyInput.value.trim() || "$";
+    state.settings.currency = els.currencyInput.value.trim() || "KES";
     saveState();
     renderAll();
   });
