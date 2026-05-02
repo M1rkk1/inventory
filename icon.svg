@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Gamma Inventory">
+  <rect width="512" height="512" rx="96" fill="#12695f"/>
+  <path d="M116 148c0-20 16-36 36-36h208c20 0 36 16 36 36v216c0 20-16 36-36 36H152c-20 0-36-16-36-36V148Z" fill="#f6f7f4"/>
+  <path d="M168 178h176v42H168v-42Zm0 76h176v42H168v-42Zm0 76h112v42H168v-42Z" fill="#12695f"/>
+  <path d="M334 318h54v54h-54v-54Z" fill="#d9872b"/>
+</svg>

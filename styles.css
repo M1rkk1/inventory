@@ -26,6 +26,19 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+body.locked {
+  overflow: hidden;
+}
+
+body.locked .app-shell,
+body.locked .chatbot {
+  display: none;
+}
+
+body.unlocked .auth-screen {
+  display: none;
+}
+
 button,
 input,
 select,
@@ -63,6 +76,19 @@ textarea {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.brand.large {
+  color: var(--ink);
+}
+
+.brand.large .brand-mark {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.brand.large span {
+  color: var(--muted);
 }
 
 .brand-mark {
@@ -132,6 +158,44 @@ textarea {
   padding: 28px;
   overflow-x: hidden;
   min-width: 0;
+}
+
+.auth-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(18, 105, 95, 0.1), rgba(217, 135, 43, 0.08)),
+    var(--bg);
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.auth-card h1 {
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  line-height: 1;
+}
+
+.auth-copy,
+.form-message {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.form-message {
+  min-height: 20px;
+  color: var(--danger);
+  font-weight: 700;
 }
 
 .topbar {
@@ -230,6 +294,11 @@ h2 {
   color: var(--ink);
 }
 
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .icon,
 .stat-icon {
   width: 18px;
@@ -254,6 +323,12 @@ h2 {
 
 .icon[data-icon="trash-2"]::before {
   content: "D";
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.icon[data-icon="shopping-cart"]::before {
+  content: "S";
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -504,6 +579,24 @@ dialog::backdrop {
   align-items: center;
 }
 
+.sell-summary {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  background: #f3f7f4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.sell-summary strong {
+  font-size: 1rem;
+}
+
+.sell-summary span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -525,6 +618,111 @@ label {
 
 .file-button input {
   display: none;
+}
+
+.chatbot {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 20;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.chat-toggle {
+  border: 0;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 0 18px;
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 14px 32px rgba(18, 105, 95, 0.25);
+}
+
+.chat-panel {
+  width: min(380px, calc(100vw - 28px));
+  height: min(560px, calc(100dvh - 100px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 22px 70px rgba(18, 31, 32, 0.24);
+  overflow: hidden;
+}
+
+.chat-header {
+  min-height: 68px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #15292b;
+  color: #ffffff;
+}
+
+.chat-header strong,
+.chat-header span {
+  display: block;
+}
+
+.chat-header span {
+  color: #b7c9c6;
+  font-size: 0.82rem;
+}
+
+.chat-header .icon-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.chat-messages {
+  height: calc(100% - 132px);
+  padding: 14px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  overflow-y: auto;
+  background: #f9faf7;
+}
+
+.chat-message {
+  max-width: 88%;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.45;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.chat-message.assistant {
+  justify-self: start;
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+
+.chat-message.user {
+  justify-self: end;
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.chat-form {
+  height: 64px;
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.chat-form input {
+  width: 100%;
 }
 
 @media (max-width: 1100px) {
@@ -760,6 +958,21 @@ label {
     padding: 18px;
     overflow-y: auto;
   }
+
+  .chatbot {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .chat-toggle,
+  .chat-panel {
+    width: 100%;
+  }
+
+  .chat-panel {
+    height: min(560px, calc(100dvh - 96px));
+  }
 }
 
 @media (max-width: 420px) {
@@ -792,5 +1005,13 @@ label {
   .nav-item .icon {
     width: 16px;
     height: 16px;
+  }
+
+  .auth-screen {
+    padding: 14px;
+  }
+
+  .auth-card {
+    padding: 20px;
   }
 }

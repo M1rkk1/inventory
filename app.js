@@ -1,4 +1,6 @@
 const STORAGE_KEY = "gammaInventory.v1";
+const AUTH_KEY = "gammaInventory.auth.v1";
+const SESSION_KEY = "gammaInventory.session";
 
 function createId() {
   if (window.crypto?.randomUUID) return crypto.randomUUID();
@@ -34,6 +36,16 @@ const els = {
   modalTitle: document.querySelector("#modalTitle"),
   closeModalBtn: document.querySelector("#closeModalBtn"),
   cancelBtn: document.querySelector("#cancelBtn"),
+  sellDialog: document.querySelector("#sellDialog"),
+  sellForm: document.querySelector("#sellForm"),
+  sellItemId: document.querySelector("#sellItemId"),
+  sellItemName: document.querySelector("#sellItemName"),
+  sellItemDetails: document.querySelector("#sellItemDetails"),
+  sellQuantity: document.querySelector("#sellQuantity"),
+  sellNote: document.querySelector("#sellNote"),
+  sellMessage: document.querySelector("#sellMessage"),
+  closeSellModalBtn: document.querySelector("#closeSellModalBtn"),
+  cancelSellBtn: document.querySelector("#cancelSellBtn"),
   totalItems: document.querySelector("#totalItems"),
   totalQuantity: document.querySelector("#totalQuantity"),
   lowStockCount: document.querySelector("#lowStockCount"),
@@ -50,7 +62,135 @@ const els = {
   importFile: document.querySelector("#importFile"),
   resetBtn: document.querySelector("#resetBtn"),
   categorySuggestions: document.querySelector("#categorySuggestions"),
+  authForm: document.querySelector("#authForm"),
+  authTitle: document.querySelector("#authTitle"),
+  authMode: document.querySelector("#authMode"),
+  authCopy: document.querySelector("#authCopy"),
+  authMessage: document.querySelector("#authMessage"),
+  authSubmit: document.querySelector("#authSubmit"),
+  passcodeInput: document.querySelector("#passcodeInput"),
+  confirmPasscodeWrap: document.querySelector("#confirmPasscodeWrap"),
+  confirmPasscodeInput: document.querySelector("#confirmPasscodeInput"),
+  lockBtn: document.querySelector("#lockBtn"),
+  chatToggle: document.querySelector("#chatToggle"),
+  chatPanel: document.querySelector("#chatPanel"),
+  closeChatBtn: document.querySelector("#closeChatBtn"),
+  chatMessages: document.querySelector("#chatMessages"),
+  chatForm: document.querySelector("#chatForm"),
+  chatInput: document.querySelector("#chatInput"),
 };
+
+function isSetupMode() {
+  return !localStorage.getItem(AUTH_KEY);
+}
+
+function encodeText(value) {
+  return new TextEncoder().encode(value);
+}
+
+function toHex(buffer) {
+  return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function fallbackHash(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return `fallback-${(hash >>> 0).toString(16)}`;
+}
+
+async function hashPasscode(passcode, salt) {
+  if (!window.crypto?.subtle) return fallbackHash(`${salt}:${passcode}`);
+
+  const key = await crypto.subtle.importKey("raw", encodeText(passcode), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: encodeText(salt),
+      iterations: 120000,
+      hash: "SHA-256",
+    },
+    key,
+    256
+  );
+  return toHex(bits);
+}
+
+function createSalt() {
+  if (!window.crypto?.getRandomValues) return createId();
+  const values = new Uint8Array(16);
+  crypto.getRandomValues(values);
+  return toHex(values);
+}
+
+function updateAuthMode() {
+  const setup = isSetupMode();
+  els.authMode.textContent = setup ? "Create Admin Access" : "Secure Access";
+  els.authTitle.textContent = setup ? "Create your passcode" : "Sign in to continue";
+  els.authCopy.textContent = setup
+    ? "Create an admin passcode for this device. Use at least 6 characters."
+    : "Enter the admin passcode for this device.";
+  els.authSubmit.innerHTML = setup
+    ? `<span class="icon" data-icon="shield-check"></span>Create Passcode`
+    : `<span class="icon" data-icon="lock-keyhole"></span>Unlock`;
+  els.confirmPasscodeWrap.hidden = !setup;
+  els.confirmPasscodeInput.required = setup;
+  els.passcodeInput.autocomplete = setup ? "new-password" : "current-password";
+  renderIcons();
+}
+
+function unlockApp() {
+  sessionStorage.setItem(SESSION_KEY, "unlocked");
+  document.body.classList.remove("locked");
+  document.body.classList.add("unlocked");
+  els.passcodeInput.value = "";
+  els.confirmPasscodeInput.value = "";
+  els.authMessage.textContent = "";
+  renderAll();
+}
+
+function lockApp() {
+  sessionStorage.removeItem(SESSION_KEY);
+  document.body.classList.add("locked");
+  document.body.classList.remove("unlocked");
+  updateAuthMode();
+  els.passcodeInput.focus();
+}
+
+async function handleAuth(event) {
+  event.preventDefault();
+  const passcode = els.passcodeInput.value;
+  const confirmation = els.confirmPasscodeInput.value;
+
+  if (passcode.length < 6) {
+    els.authMessage.textContent = "Use at least 6 characters.";
+    return;
+  }
+
+  if (isSetupMode()) {
+    if (passcode !== confirmation) {
+      els.authMessage.textContent = "Passcodes do not match.";
+      return;
+    }
+
+    const salt = createSalt();
+    const hash = await hashPasscode(passcode, salt);
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ salt, hash, createdAt: new Date().toISOString() }));
+    unlockApp();
+    return;
+  }
+
+  const auth = JSON.parse(localStorage.getItem(AUTH_KEY));
+  const hash = await hashPasscode(passcode, auth.salt);
+  if (hash !== auth.hash) {
+    els.authMessage.textContent = "That passcode is not correct.";
+    return;
+  }
+
+  unlockApp();
+}
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -182,6 +322,9 @@ function renderTable() {
       <td data-label="Value">${formatMoney(item.quantity * item.unitValue)}</td>
       <td data-label="Actions">
         <div class="row-actions">
+          <button class="icon-button" type="button" data-action="sell" data-id="${item.id}" aria-label="Sell ${escapeHtml(item.name)}" ${item.quantity <= 0 ? "disabled" : ""}>
+            <span class="icon" data-icon="shopping-cart"></span>
+          </button>
           <button class="icon-button" type="button" data-action="edit" data-id="${item.id}" aria-label="Edit ${escapeHtml(item.name)}">
             <span class="icon" data-icon="pencil"></span>
           </button>
@@ -326,6 +469,17 @@ function openItemDialog(item = null) {
   els.dialog.showModal();
 }
 
+function openSellDialog(item) {
+  els.sellForm.reset();
+  els.sellMessage.textContent = "";
+  els.sellItemId.value = item.id;
+  els.sellItemName.textContent = item.name;
+  els.sellItemDetails.textContent = `${Number(item.quantity).toLocaleString()} available - ${formatMoney(item.unitValue)} each`;
+  els.sellQuantity.max = String(item.quantity);
+  els.sellQuantity.value = item.quantity > 0 ? 1 : 0;
+  els.sellDialog.showModal();
+}
+
 function saveItem(event) {
   event.preventDefault();
   const id = document.querySelector("#itemId").value || createId();
@@ -357,6 +511,44 @@ function saveItem(event) {
   els.dialog.close();
 }
 
+function recordSale(event) {
+  event.preventDefault();
+  const item = state.items.find((entry) => entry.id === els.sellItemId.value);
+  if (!item) return;
+
+  const quantitySold = Number(els.sellQuantity.value || 0);
+  if (!Number.isInteger(quantitySold) || quantitySold < 1) {
+    els.sellMessage.textContent = "Enter a whole number of items sold.";
+    return;
+  }
+
+  if (quantitySold > item.quantity) {
+    els.sellMessage.textContent = `Only ${Number(item.quantity).toLocaleString()} available.`;
+    return;
+  }
+
+  item.quantity -= quantitySold;
+  item.sales = [
+    ...(Array.isArray(item.sales) ? item.sales : []),
+    {
+      id: createId(),
+      quantity: quantitySold,
+      unitValue: Number(item.unitValue || 0),
+      totalValue: quantitySold * Number(item.unitValue || 0),
+      note: els.sellNote.value.trim(),
+      soldAt: new Date().toISOString(),
+    },
+  ];
+  item.updatedAt = new Date().toISOString();
+  if (item.quantity === 0) {
+    item.status = "Out of Stock";
+  }
+
+  saveState();
+  renderAll();
+  els.sellDialog.close();
+}
+
 function handleTableClick(event) {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
@@ -366,6 +558,10 @@ function handleTableClick(event) {
 
   if (button.dataset.action === "edit") {
     openItemDialog(item);
+  }
+
+  if (button.dataset.action === "sell") {
+    openSellDialog(item);
   }
 
   if (button.dataset.action === "duplicate") {
@@ -421,6 +617,134 @@ function importData(file) {
   reader.readAsText(file);
 }
 
+function addChatMessage(role, text) {
+  const message = document.createElement("div");
+  message.className = `chat-message ${role}`;
+  message.textContent = text;
+  els.chatMessages.append(message);
+  els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+}
+
+function inventorySummary() {
+  const totalItems = state.items.length;
+  const totalQuantity = state.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const totalValue = state.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unitValue || 0), 0);
+  const lowStock = state.items.filter((item) => ["Low Stock", "Out of Stock"].includes(derivedStatus(item)));
+  const maintenance = state.items.filter((item) => item.status === "Maintenance" || derivedStatus(item) === "Maintenance");
+  const sales = state.items.flatMap((item) =>
+    (Array.isArray(item.sales) ? item.sales : []).map((sale) => ({
+      ...sale,
+      itemName: item.name,
+    }))
+  );
+  const soldQuantity = sales.reduce((sum, sale) => sum + Number(sale.quantity || 0), 0);
+  const soldValue = sales.reduce((sum, sale) => sum + Number(sale.totalValue || 0), 0);
+  return { totalItems, totalQuantity, totalValue, lowStock, maintenance, sales, soldQuantity, soldValue };
+}
+
+function answerLocally(question) {
+  const text = question.toLowerCase();
+  const summary = inventorySummary();
+
+  if (!state.items.length) {
+    if (text.includes("add") || text.includes("item") || text.includes("start")) {
+      return "Start by clicking Add Item, then enter the item name, category, quantity, location, custodian, and low-stock alert. I will begin summarizing your records once items are saved.";
+    }
+    return "Gamma Inventory is ready, but there are no saved records yet. Add your first item and I can help with stock summaries, low-stock checks, locations, categories, and audit prep.";
+  }
+
+  if (text.includes("low") || text.includes("out of stock") || text.includes("attention")) {
+    if (!summary.lowStock.length) return "No saved items are currently low or out of stock.";
+    return `Items needing stock attention: ${summary.lowStock.map((item) => `${item.name} (${derivedStatus(item)}, ${item.quantity} left)`).join("; ")}.`;
+  }
+
+  if (text.includes("maintenance") || text.includes("repair")) {
+    if (!summary.maintenance.length) return "No saved items are currently marked for maintenance.";
+    return `Maintenance items: ${summary.maintenance.map((item) => `${item.name} at ${item.location || "no location"}`).join("; ")}.`;
+  }
+
+  if (text.includes("total") || text.includes("summary") || text.includes("value")) {
+    return `Current summary: ${summary.totalItems} item records, ${summary.totalQuantity} total units, and ${formatMoney(summary.totalValue)} in recorded stock value.`;
+  }
+
+  if (text.includes("sale") || text.includes("sold") || text.includes("sell")) {
+    if (!summary.sales.length) return "No sales have been recorded yet. Use the cart button on an item row to record a sale.";
+    const recentSales = summary.sales
+      .sort((a, b) => new Date(b.soldAt) - new Date(a.soldAt))
+      .slice(0, 5)
+      .map((sale) => `${sale.itemName}: ${sale.quantity} sold for ${formatMoney(sale.totalValue)}`)
+      .join("; ");
+    return `Sales summary: ${summary.soldQuantity} units sold, worth ${formatMoney(summary.soldValue)}. Recent sales: ${recentSales}.`;
+  }
+
+  if (text.includes("category")) {
+    const grouped = groupBy("category");
+    return `Category quantities: ${Object.entries(grouped)
+      .map(([category, quantity]) => `${category}: ${quantity}`)
+      .join("; ")}.`;
+  }
+
+  if (text.includes("location") || text.includes("where")) {
+    const grouped = groupBy("location");
+    return `Location quantities: ${Object.entries(grouped)
+      .map(([location, quantity]) => `${location}: ${quantity}`)
+      .join("; ")}.`;
+  }
+
+  if (text.includes("export") || text.includes("backup")) {
+    return "Use Export to download a JSON backup of the inventory. Keep backups somewhere safe before clearing records or moving devices.";
+  }
+
+  if (text.includes("search") || text.includes("find")) {
+    return "Use the search box at the top to find items by name, category, location, custodian, condition, status, or notes.";
+  }
+
+  return "I can help with low stock, maintenance items, category totals, location totals, stock value, backups, and how to use the app. Try asking: what needs attention?";
+}
+
+async function askGammaAI(question) {
+  const endpoint = window.GAMMA_AI_ENDPOINT;
+  if (!endpoint) return answerLocally(question);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        inventory: state.items,
+        settings: state.settings,
+      }),
+    });
+
+    if (!response.ok) throw new Error("AI endpoint failed");
+    const data = await response.json();
+    return data.answer || answerLocally(question);
+  } catch {
+    return `${answerLocally(question)} The external AI service is not reachable, so I answered from the saved inventory data.`;
+  }
+}
+
+function toggleChat(open = els.chatPanel.hidden) {
+  els.chatPanel.hidden = !open;
+  els.chatToggle.setAttribute("aria-expanded", String(open));
+  if (open && !els.chatMessages.children.length) {
+    addChatMessage("assistant", "Hi, I am Gamma AI. Ask me about stock, low inventory, maintenance, categories, locations, backups, or app steps.");
+  }
+  if (open) els.chatInput.focus();
+}
+
+function registerServiceWorker() {
+  const canRegister = "serviceWorker" in navigator && ["http:", "https:"].includes(window.location.protocol);
+  if (!canRegister) return;
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      console.info("Gamma Inventory service worker registration was skipped.");
+    });
+  });
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -431,6 +755,8 @@ function escapeHtml(value) {
 }
 
 function bindEvents() {
+  els.authForm.addEventListener("submit", handleAuth);
+  els.lockBtn.addEventListener("click", lockApp);
   els.navItems.forEach((item) => item.addEventListener("click", () => switchView(item.dataset.view)));
   document.querySelectorAll("[data-view-shortcut]").forEach((item) => {
     item.addEventListener("click", () => switchView(item.dataset.viewShortcut));
@@ -455,6 +781,9 @@ function bindEvents() {
   els.closeModalBtn.addEventListener("click", () => els.dialog.close());
   els.cancelBtn.addEventListener("click", () => els.dialog.close());
   els.form.addEventListener("submit", saveItem);
+  els.closeSellModalBtn.addEventListener("click", () => els.sellDialog.close());
+  els.cancelSellBtn.addEventListener("click", () => els.sellDialog.close());
+  els.sellForm.addEventListener("submit", recordSale);
   els.table.addEventListener("click", handleTableClick);
 
   els.companyForm.addEventListener("submit", (event) => {
@@ -478,8 +807,26 @@ function bindEvents() {
     saveState();
     renderAll();
   });
+
+  els.chatToggle.addEventListener("click", () => toggleChat());
+  els.closeChatBtn.addEventListener("click", () => toggleChat(false));
+  els.chatForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const question = els.chatInput.value.trim();
+    if (!question) return;
+    els.chatInput.value = "";
+    addChatMessage("user", question);
+    addChatMessage("assistant", await askGammaAI(question));
+  });
 }
 
 loadState();
 bindEvents();
-renderAll();
+registerServiceWorker();
+updateAuthMode();
+if (sessionStorage.getItem(SESSION_KEY) === "unlocked") {
+  unlockApp();
+} else {
+  renderIcons();
+  els.passcodeInput.focus();
+}

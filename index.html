@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Gamma Inventory</title>
+    <meta name="theme-color" content="#12695f" />
+    <meta
+      name="description"
+      content="Gamma Inventory is a secure installable inventory app for tracking company assets, stock, locations, custodians, and reports."
+    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,7 +20,37 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body class="locked">
+    <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+      <form class="auth-card" id="authForm">
+        <div class="brand large">
+          <div class="brand-mark">GI</div>
+          <div>
+            <strong>Gamma Inventory</strong>
+            <span>Secure company asset register</span>
+          </div>
+        </div>
+        <div>
+          <p class="eyebrow" id="authMode">Secure Access</p>
+          <h1 id="authTitle">Sign in to continue</h1>
+          <p class="auth-copy" id="authCopy">Enter the admin passcode for this device.</p>
+        </div>
+        <label>
+          Admin passcode
+          <input id="passcodeInput" type="password" minlength="6" autocomplete="current-password" required />
+        </label>
+        <label id="confirmPasscodeWrap" hidden>
+          Confirm passcode
+          <input id="confirmPasscodeInput" type="password" minlength="6" autocomplete="new-password" />
+        </label>
+        <p class="form-message" id="authMessage" role="status"></p>
+        <button class="button primary" type="submit" id="authSubmit">
+          <span class="icon" data-icon="lock-keyhole"></span>
+          Unlock
+        </button>
+      </form>
+    </section>
+
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
@@ -67,6 +105,10 @@
             <button class="button primary" id="addItemBtn" type="button">
               <span class="icon" data-icon="plus"></span>
               Add Item
+            </button>
+            <button class="button secondary" id="lockBtn" type="button">
+              <span class="icon" data-icon="lock"></span>
+              Lock
             </button>
           </div>
         </header>
@@ -301,6 +343,70 @@
         </div>
       </form>
     </dialog>
+
+    <dialog id="sellDialog">
+      <form method="dialog" id="sellForm" class="item-form">
+        <div class="modal-heading">
+          <div>
+            <p class="eyebrow">Stock Movement</p>
+            <h2>Record Sale</h2>
+          </div>
+          <button class="icon-button" value="cancel" type="button" id="closeSellModalBtn" aria-label="Close">
+            <span class="icon" data-icon="x"></span>
+          </button>
+        </div>
+
+        <input type="hidden" id="sellItemId" />
+        <div class="sell-summary">
+          <strong id="sellItemName">Selected item</strong>
+          <span id="sellItemDetails">0 available</span>
+        </div>
+        <div class="form-grid">
+          <label>
+            Quantity sold
+            <input id="sellQuantity" type="number" min="1" step="1" required />
+          </label>
+          <label>
+            Sale note
+            <input id="sellNote" type="text" placeholder="Invoice, customer, receipt..." />
+          </label>
+        </div>
+        <p class="form-message" id="sellMessage" role="status"></p>
+
+        <div class="modal-actions">
+          <button class="button secondary" value="cancel" type="button" id="cancelSellBtn">Cancel</button>
+          <button class="button primary" value="default" type="submit">
+            <span class="icon" data-icon="shopping-cart"></span>
+            Save Sale
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <section class="chatbot" id="chatbot" aria-label="Gamma AI assistant">
+      <button class="chat-toggle" id="chatToggle" type="button" aria-expanded="false">
+        <span class="icon" data-icon="sparkles"></span>
+        Gamma AI
+      </button>
+      <div class="chat-panel" id="chatPanel" hidden>
+        <div class="chat-header">
+          <div>
+            <strong>Gamma AI</strong>
+            <span>Inventory assistant</span>
+          </div>
+          <button class="icon-button" id="closeChatBtn" type="button" aria-label="Close Gamma AI">
+            <span class="icon" data-icon="x"></span>
+          </button>
+        </div>
+        <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+        <form class="chat-form" id="chatForm">
+          <input id="chatInput" type="text" placeholder="Ask about stock, reports, or app tasks..." autocomplete="off" />
+          <button class="icon-button" type="submit" aria-label="Send message">
+            <span class="icon" data-icon="send"></span>
+          </button>
+        </form>
+      </div>
+    </section>
 
     <template id="emptyStateTemplate">
       <tr>
